@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mist OS - PIF Downloader</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #533483);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: white;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+                opacity: 0.6;
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+                opacity: 1;
+            }
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .banner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            transform: scale(0);
+        }
+
+        .banner-image {
+            max-width: 400px;
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(198, 35, 135, 0.3);
+            transition: all 0.3s ease;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+
+        .banner-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 40px rgba(198, 35, 135, 0.4);
+        }
+
+        @keyframes gradientText {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+            transform: translateX(-50px);
+            opacity: 0;
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            transform: translateY(50px);
+            opacity: 0;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .download-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .download-btn:hover::before {
+            left: 100%;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            transform: translateY(30px);
+            opacity: 0;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            animation: bounce 0.6s ease;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            80% { transform: translateY(-10px); }
+        }
+
+        .error {
+            color: #ff6b6b;
+        }
+
+        .success {
+            color: #4ecdc4;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                padding: 30px 20px;
+            }
+            
+            .banner-image {
+                max-width: 320px;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-particles"></div>
+    
+    <div class="container">
+        <div class="card">
+            <div class="banner-container">
+                <img src="images/banner-round.webp" alt="MistOS Banner" class="banner-image">
+            </div>
+            <p class="subtitle">Play Integrity Fix Downloader</p>
+            <button class="download-btn" onclick="downloadPIF()">
+                Download PIF.json
+            </button>
+            <div class="status" id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particleContainer = document.querySelector('.floating-particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particleContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize animations
+        function initAnimations() {
+            // Card entrance animation
+            anime({
+                targets: '.card',
+                translateY: [100, 0],
+                opacity: [0, 1],
+                duration: 1200,
+                easing: 'easeOutExpo',
+                delay: 300
+            });
+
+            // Banner container animation
+            anime({
+                targets: '.banner-container',
+                scale: [0, 1],
+                duration: 1000,
+                easing: 'easeOutElastic(1, .8)',
+                delay: 800
+            });
+
+            // Banner image animation
+            anime({
+                targets: '.banner-image',
+                rotateY: [180, 0],
+                duration: 1200,
+                easing: 'easeOutExpo',
+                delay: 1000
+            });
+
+            // Subtitle animation
+            anime({
+                targets: '.subtitle',
+                translateX: [-50, 0],
+                opacity: [0, 1],
+                duration: 800,
+                easing: 'easeOutExpo',
+                delay: 1200
+            });
+
+            // Button animation
+            anime({
+                targets: '.download-btn',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                duration: 800,
+                easing: 'easeOutExpo',
+                delay: 1600
+            });
+
+            // Status animation
+            anime({
+                targets: '.status',
+                translateY: [30, 0],
+                opacity: [0, 1],
+                duration: 600,
+                easing: 'easeOutExpo',
+                delay: 2000
+            });
+        }
+
+        // Download function
+        async function downloadPIF() {
+            const statusEl = document.getElementById('status');
+            const btnEl = document.querySelector('.download-btn');
+            
+            // Show loading state
+            statusEl.innerHTML = '<span class="loading"></span>Fetching PIF data...';
+            btnEl.disabled = true;
+            btnEl.style.opacity = '0.7';
+            
+            // Animate status appearance
+            anime({
+                targets: '#status',
+                scale: [0.8, 1],
+                opacity: [0.5, 1],
+                duration: 300,
+                easing: 'easeOutQuad'
+            });
+
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/Project-Mist-OS/vendor_Spoofing/refs/heads/15/PlayIntergrity/pif.json');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Create download
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'pif.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Show success
+                statusEl.innerHTML = '<span class="success-icon">✓</span><span class="success">Download successful!</span>';
+                
+                // Success animation
+                anime({
+                    targets: '#status',
+                    scale: [1, 1.1, 1],
+                    duration: 600,
+                    easing: 'easeOutElastic(1, .6)'
+                });
+                
+            } catch (error) {
+                console.error('Download failed:', error);
+                statusEl.innerHTML = '<span class="error">❌ Download failed. Please try again.</span>';
+                
+                // Error shake animation
+                anime({
+                    targets: '#status',
+                    translateX: [0, -10, 10, -10, 10, 0],
+                    duration: 600,
+                    easing: 'easeInOutQuad'
+                });
+            } finally {
+                btnEl.disabled = false;
+                btnEl.style.opacity = '1';
+                
+                // Button bounce back animation
+                anime({
+                    targets: '.download-btn',
+                    scale: [0.95, 1],
+                    duration: 300,
+                    easing: 'easeOutQuad'
+                });
+            }
+        }
+
+        // Initialize everything when page loads
+        window.addEventListener('load', () => {
+            createParticles();
+            initAnimations();
+        });
+
+        // Add subtle hover animations for particles
+        document.addEventListener('mousemove', (e) => {
+            const particles = document.querySelectorAll('.particle');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+            
+            particles.forEach((particle, index) => {
+                const speed = (index % 3 + 1) * 0.5;
+                const x = (mouseX - 0.5) * speed;
+                const y = (mouseY - 0.5) * speed;
+                
+                particle.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
